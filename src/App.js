@@ -1,25 +1,74 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState } from "react";
 
-function App() {
+//components
+import { Box } from "./components/box";
+import { Main } from "./components/main";
+import { NavBar } from "./components/navBar";
+import { MovieList } from "./components/movieList";
+import { MovieDetails } from "./components/movieDetails";
+import { WatchedSummary } from "./components/watchedSummary";
+import { WatchedMovieList } from "./components/watchedMovieList";
+
+// hooks
+import { useMovies } from "./hooks/useMovies";
+import { useLocalStorageState } from "./hooks/useLocalStorageState";
+
+// modules
+import { Loader } from "./modules/loader";
+import { Search } from "./modules/search";
+import { NumResults } from "./modules/numResults";
+import { ErrorMessage } from "./modules/errors";
+
+// handler
+import Handlers from "./handler/handlers";
+
+export default function App() {
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
+  const { movies, isLoading, error } = useMovies(query);
+
+  const [watched, setWatched] = useLocalStorageState([], "watched");
+
+  const {
+    handleSelectMovie,
+    handleCloseMovie,
+    handleAddWatched,
+    handleDeleteWatched,
+  } = Handlers({ setSelectedId, setWatched });
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <NavBar>
+        <Search query={query} setQuery={setQuery} />
+        <NumResults movies={movies} />
+      </NavBar>
+      <Main>
+        <Box>
+          {isLoading && <Loader />}
+          {!isLoading && !error && (
+            <MovieList movies={movies} onSelectMovie={handleSelectMovie} />
+          )}
+          {error && <ErrorMessage message={error} />}
+        </Box>
+        <Box>
+          {selectedId ? (
+            <MovieDetails
+              selectedId={selectedId}
+              onCloseMovie={handleCloseMovie}
+              onAddWatched={handleAddWatched}
+              watched={watched}
+            />
+          ) : (
+            <>
+              <WatchedSummary watched={watched} />
+              <WatchedMovieList
+                watched={watched}
+                onDeleteWatched={handleDeleteWatched}
+              />
+            </>
+          )}
+        </Box>
+      </Main>
+    </>
   );
 }
-
-export default App;
